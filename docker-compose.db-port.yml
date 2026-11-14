@@ -1,0 +1,5 @@
+# Optional: only use when a host-side DB client needs access.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"

@@ -1,0 +1,15 @@
+# Local credentials, overrides, and backups
+.env
+.env.*
+!.env.example
+/docker-compose.override.yml
+/backups/
+
+# Independently cloned repia-app repository (no submodule)
+/html/app/
+
+# Local editor / OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp
