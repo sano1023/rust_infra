@@ -63,6 +63,7 @@ services:
       - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
     networks:
       - backend
+      - frontend
     healthcheck:
       test: ["CMD", "/mailpit", "readyz"]
       interval: 5s
@@ -72,6 +73,9 @@ services:
   app:
     <<: *service-defaults
     profiles: ["app"]
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=./docker/security/app-seccomp.json
     build:
       context: ./docker/rust
       target: development
@@ -92,9 +96,11 @@ services:
       WATCH_POLL_INTERVAL: ${WATCH_POLL_INTERVAL:-1s}
     volumes:
       - ./html/app:/app
+      - ./html/docs:/tmp/repia-specs:ro
       - cargo_registry:/usr/local/cargo/registry
       - cargo_git:/usr/local/cargo/git
-      - cargo_target:/app/target
+      - cargo_target:/usr/local/cargo/target
+      - dev_home:/home/dev
     networks:
       - backend
       - frontend
@@ -138,6 +144,21 @@ services:
       retries: 5
     stop_grace_period: 30s
 
+  stripe:
+    <<: *service-defaults
+    profiles: ["stripe"]
+    build:
+      context: ./docker/stripe
+    cap_drop: ["ALL"]
+    init: true
+    environment:
+      STRIPE_FORWARD_TO: ${STRIPE_FORWARD_TO:-http://app:5150/api/v1/billing/webhooks/stripe}
+    volumes:
+      - stripe_config:/home/stripe/.config/stripe
+    networks:
+      - frontend
+    stop_grace_period: 15s
+
 networks:
   backend:
     internal: true
@@ -149,3 +170,5 @@ volumes:
   cargo_registry:
   cargo_git:
   cargo_target:
+  dev_home:
+  stripe_config:
